@@ -6,11 +6,11 @@
  */
 namespace MooDev\Bounce\Logger;
 
+use Psr\Log\NullLogger;
+
 class NullLogFactory
 {
-
     public static function getLog($class) {
         return new NullLogger();
     }
-
 }

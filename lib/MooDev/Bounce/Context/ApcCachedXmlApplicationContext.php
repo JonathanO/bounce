@@ -8,7 +8,8 @@
 namespace MooDev\Bounce\Context;
 
 use MooDev\Bounce\Config;
-use MooDev\Bounce\Logger\Logger;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Sub-class of the XmlApplicationContext which caches the parsed configuration
@@ -21,10 +22,10 @@ use MooDev\Bounce\Logger\Logger;
  * @author steve
  *
  */
-class ApcCachedXmlApplicationContext extends XmlApplicationContext
+class ApcCachedXmlApplicationContext extends XmlApplicationContext implements LoggerAwareInterface
 {
     /**
-     * @var Logger the logging instance
+     * @var LoggerInterface the logging instance
      */
     private $_log;
     /**
@@ -42,7 +43,10 @@ class ApcCachedXmlApplicationContext extends XmlApplicationContext
      */
     public function __construct($xmlFilePath, $shareBeanCache = true, $customNamespaces = array(), $logFactory = array('\MooDev\Bounce\Logger\NullLogFactory', 'getLog'))
     {
-        $this->_log = call_user_func($logFactory, get_class($this));
+        $logger = call_user_func($logFactory, get_class($this));
+        if ($logger instanceof LoggerInterface) {
+            $this->setLogger($logger);
+        }
         parent::__construct($xmlFilePath, $shareBeanCache, $customNamespaces);
     }
 
@@ -50,9 +54,7 @@ class ApcCachedXmlApplicationContext extends XmlApplicationContext
     {
         //Do we have caching enabled?
         if (function_exists("apc_fetch")) {
-            if ($this->_log->isDebugEnabled()) {
-                $this->_log->debug("APC caching is ENABLED");
-            }
+            $this->_log->debug("APC caching is ENABLED");
             //Do we have a cache entry for this file path?
             $cacheKey = "bouncexml~$xmlFilePath";
             $cacheContentSerialized = apc_fetch($cacheKey);
@@ -78,9 +80,7 @@ class ApcCachedXmlApplicationContext extends XmlApplicationContext
             //   "context" => Config_Context
             // )
             if ($cacheContentSerialized) {
-                if ($this->_log->isDebugEnabled()) {
-                    $this->_log->debug("Found cached version on $xmlFilePath");
-                }
+                $this->_log->debug("Found cached version on {xmlFilePath}", array("xmlFilePath" => $xmlFilePath));
                 $cacheContent = unserialize($cacheContentSerialized);
                 //Look at all the files from the cache content array to see
                 //if any of them are different
@@ -94,9 +94,7 @@ class ApcCachedXmlApplicationContext extends XmlApplicationContext
                     $onDiskStatInfo["dev"] != $cachedStatInfo["dev"]
                     ) {
                         $cacheUpToDate = false;
-                        if ($this->_log->isDebugEnabled()) {
-                            $this->_log->debug("Cache out of date: $fileName has stat: " . print_r($onDiskStatInfo, true) . " but cached " . print_r($cachedStatInfo, true));
-                        }
+                        $this->_log->debug("Cache out of date: {fileName} has stat: {stat} but cached {cached}", array("fileName" => $fileName, "stat" => $onDiskStatInfo, "cached" => $cachedStatInfo));
                         break;
                     }
                 }
@@ -106,15 +104,12 @@ class ApcCachedXmlApplicationContext extends XmlApplicationContext
                     /*foreach ($filesToCheck as $fileName => $cachedStatInfo) {
                         $this->_processedFiles[$fileName] = $cacheContent["context"];
                     }*/ //TODO We can't update this any more since it's a map of child contexts, which we don't have
-                    if ($this->_log->isDebugEnabled()) {
-                        $this->_log->debug("Cache is up to date. Returning cached context");
-                    }
+                    $this->_log->debug("Cache is up to date. Returning cached context");
                     return $cacheContent["context"];
                 }
             }
-            if ($this->_log->isDebugEnabled()) {
-                $this->_log->debug("Cache item not found or invalid for $xmlFilePath. Reloading ...");
-            }
+            $this->_log->debug("Cache item not found or invalid for {xmlFilePath}. Reloading ...", array("xmlFilePath" => $xmlFilePath));
+
             //If we get here, we're basically not up to date one way or another
             //so load up the context, and cache it.
             $context = parent::_parseXmlFile($xmlFilePath);
@@ -135,13 +130,11 @@ class ApcCachedXmlApplicationContext extends XmlApplicationContext
             }
             $cacheContentStr = serialize($cacheContent);
             apc_store($cacheKey, $cacheContentStr);
-            if ($this->_log->isDebugEnabled()) {
-                $this->_log->debug("Cache item added for $xmlFilePath");
-            }
+            $this->_log->debug("Cache item added for {$xmlFilePath}", array("xmlFilePath" => $xmlFilePath));
             //Return it
             return $context;
         } else {
-            $this->_log->warn("APC caching is DISABLED");
+            $this->_log->warning("APC caching is DISABLED");
             //No caching possible, so revert to the normal method of
             //reading from the filesystem all the time
             return parent::_parseXmlFile($xmlFilePath);
@@ -162,5 +155,16 @@ class ApcCachedXmlApplicationContext extends XmlApplicationContext
             $this->_statInfoCache[$fileName] = stat($fileName);
         }
         return $this->_statInfoCache[$fileName];
+    }
+
+    /**
+     * Sets a logger instance on the object
+     *
+     * @param LoggerInterface $logger
+     * @return null
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->_log = $logger;
     }
 }
