@@ -8,12 +8,9 @@
 
 namespace MooDev\Bounce\Symfony;
 
-use MooDev\Bounce\Config\Context;
 use MooDev\Bounce\Context\ApplicationContext;
-use MooDev\Bounce\Context\XmlContextParser;
 use MooDev\Bounce\Proxy\Utils\Base32Hex;
 use Symfony\Component\Config\ConfigCache;
-use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
@@ -22,14 +19,9 @@ class SymfonyApplicationContext extends ApplicationContext
 {
 
     /**
-     * @var SymfonyConfigBeanFactory
-     */
-    private $configBeanFactory;
-
-    /**
      * @return ContainerInterface
      */
-    protected function getContainerBuilderCached($contextFile, $customNamespaces, $cacheDir, $isDebug)
+    protected function getContainerBuilderCached($contextFile, $cacheDir, $isDebug, $loaderFactory)
     {
         $contextFile = realpath($contextFile);
 
@@ -39,7 +31,7 @@ class SymfonyApplicationContext extends ApplicationContext
         $containerConfigCache = new ConfigCache($file, $isDebug);
 
         if (!$containerConfigCache->isFresh()) {
-            $containerBuilder = $this->buildContainer($contextFile, $customNamespaces);
+            $containerBuilder = $this->buildContainer($contextFile, $loaderFactory);
 
             $dumper = new PhpDumper($containerBuilder);
             $containerConfigCache->write(
@@ -59,40 +51,26 @@ class SymfonyApplicationContext extends ApplicationContext
      * @param string $cacheDir
      * @param bool $isDebug
      */
-    public function __construct($contextFile, $customNamespaces = [], $cacheDir = null, $isDebug = false)
+    public function __construct($contextFile, array $customNamespaces = [], $cacheDir = null, $isDebug = false, LoaderFactory $loaderFactory = null)
     {
-        $this->configBeanFactory = new SymfonyConfigBeanFactory();
+        if ($loaderFactory === null) {
+            $loaderFactory = new DefaultLoaderFactory($customNamespaces);
+        }
 
         if ($cacheDir) {
-            $containerBuilder = $this->getContainerBuilderCached($contextFile, $customNamespaces, $cacheDir, $isDebug);
+            $containerBuilder = $this->getContainerBuilderCached($contextFile, $cacheDir, $isDebug, $loaderFactory);
         } else {
-            $containerBuilder = $this->buildContainer($contextFile, $customNamespaces);
+            $containerBuilder = $this->buildContainer($contextFile, $loaderFactory);
         }
 
         parent::__construct(new SymfonyContainerBeanFactory($containerBuilder));
     }
 
-    protected function importContext(Context $context, ContainerBuilder $container) {
-        $container->addResource(new FileResource($context->fileName));
-        foreach ($context->childContexts as $childContext) {
-            $this->importContext($childContext, $container);
-        }
-        foreach ($context->beans as $bean) {
-            if (empty($bean->name)) {
-                // wat.
-                continue;
-            }
-            $container->setDefinition($bean->name, $this->configBeanFactory->create($bean));
-        }
-    }
-
-    protected function buildContainer($contextFile, $customNamespaces) {
+    protected function buildContainer($contextFile, LoaderFactory $loaderFactory) {
         $containerBuilder = new ContainerBuilder();
 
-        $bounceParser = new XmlContextParser($contextFile, $customNamespaces);
-        $bounceContext = $bounceParser->getContext();
-
-        $this->importContext($bounceContext, $containerBuilder);
+        $loader = $loaderFactory->getLoader($containerBuilder);
+        $loader->load($contextFile);
 
         $containerBuilder->compile();
         return $containerBuilder;
