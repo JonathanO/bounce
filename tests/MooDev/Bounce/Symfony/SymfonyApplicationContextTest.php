@@ -1,7 +1,6 @@
 <?php
 namespace MooDev\Bounce\Symfony;
 use MooDev\Bounce\Context\ValueTagProvider;
-use MooDev\Bounce\Exception\BounceException;
 use SimpleXMLElement;
 use MooDev\Bounce\Config;
 
@@ -9,6 +8,7 @@ require_once __DIR__ . '/../../../TestInit.php';
 
 class SymfomnyApplicationContextTest extends \PHPUnit_Framework_TestCase
 {
+
     public function testLoadFullXml()
     {
         if (!defined("DOC_DIR")) {
@@ -244,7 +244,7 @@ class SymfomnyApplicationContextTest extends \PHPUnit_Framework_TestCase
 
     }
 
-   /* public function testProxyScope() {
+   public function testProxyScope() {
         if (!defined("DOC_DIR")) {
             define("DOC_DIR", realpath(__DIR__ . '/../../../'));
         }
@@ -261,7 +261,36 @@ class SymfomnyApplicationContextTest extends \PHPUnit_Framework_TestCase
         $this->assertNotSame($beanOne->goats(), $beanTwo->goats());
         $this->assertNotSame($beanOne->goats(), $beanOne->goats());
 
-    }*/
+    }
+
+    protected function _getProxyDir()
+    {
+        do {
+            $path = tempnam(sys_get_temp_dir(), 'bounce_');
+            @unlink($path);
+        } while (!@mkdir($path, 0777, true)); // If this failed, we lost a race. Try again.
+        return $path;
+    }
+
+    public function testProxyScopeWithDiskCache() {
+        if (!defined("DOC_DIR")) {
+            define("DOC_DIR", realpath(__DIR__ . '/../../../'));
+        }
+        if (!defined("SIMPLE_CONSTANT")) {
+            define("SIMPLE_CONSTANT", "Hello!");
+        }
+        $xmlFile = __DIR__ . "/scopes.xml";
+        $xmlContext = new SymfonyApplicationContext($xmlFile, [], $this->_getProxyDir());
+        $beanOne = $xmlContext->get("three");
+        $beanTwo = $xmlContext->get("three");
+        $this->assertSame($beanOne, $beanTwo);
+        $this->assertEquals("foo", $beanOne->goats()->hi);
+        $this->assertEquals("foo", $beanTwo->goats()->hi);
+        $this->assertNotSame($beanOne->goats(), $beanTwo->goats());
+        $this->assertNotSame($beanOne->goats(), $beanOne->goats());
+
+    }
+
 }
 
 class TestAdditionalProvider implements ValueTagProvider {

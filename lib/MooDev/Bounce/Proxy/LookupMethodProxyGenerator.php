@@ -108,7 +108,7 @@ class LookupMethodProxyGenerator {
             ->addProperty(new Property("__bounceBeanFactory", "null", "private"));
 
         $constructorBuilder = MethodBuilder::build("__construct")
-            ->addParam(new Param("__bounceBeanFactory", false, null, '\MooDev\Bounce\Context\BeanFactory'))
+            ->addParam(new Param("__bounceBeanFactory", false, null, '\MooDev\Bounce\Context\IBeanFactory'))
             ->addLine('$this->__bounceBeanFactory = $__bounceBeanFactory;');
 
         $rCon = $rClass->getConstructor();

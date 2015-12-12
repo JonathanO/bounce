@@ -9,6 +9,9 @@
 namespace MooDev\Bounce\Symfony;
 
 use MooDev\Bounce\Context\ApplicationContext;
+use MooDev\Bounce\Proxy\ProxyGeneratorFactory;
+use MooDev\Bounce\Proxy\Store\FilesProxyStore;
+use MooDev\Bounce\Proxy\Store\InMemoryProxyStore;
 use MooDev\Bounce\Proxy\Utils\Base32Hex;
 use Symfony\Component\Config\ConfigCache;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -54,7 +57,13 @@ class SymfonyApplicationContext extends ApplicationContext
     public function __construct($contextFile, array $customNamespaces = [], $cacheDir = null, $isDebug = false, LoaderFactory $loaderFactory = null)
     {
         if ($loaderFactory === null) {
-            $loaderFactory = new DefaultLoaderFactory($customNamespaces);
+            if ($cacheDir) {
+                $proxyStore = new FilesProxyStore($cacheDir . DIRECTORY_SEPARATOR . 'proxies');
+            } else {
+                $proxyStore = new InMemoryProxyStore();
+            }
+            $proxyGeneratorFactory = new ProxyGeneratorFactory($proxyStore);
+            $loaderFactory = new DefaultLoaderFactory($customNamespaces, $proxyGeneratorFactory);
         }
 
         if ($cacheDir) {
