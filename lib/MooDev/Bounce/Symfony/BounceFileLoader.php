@@ -1,11 +1,9 @@
 <?php
 /**
- * Created by IntelliJ IDEA.
- * User: jono
- * Date: 12/12/2015
- * Time: 12:40
+ * @author Jonathan Oddy <jonathan@moo.com>
+ * @copyright Copyright (c) 2015, MOO Print Ltd.
+ * @license ISC
  */
-
 namespace MooDev\Bounce\Symfony;
 
 
@@ -17,6 +15,9 @@ use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\FileLoader;
 
+/**
+ * A Symfony Config FileLoader that will load a Bounce xml config into a Symfony DI container.
+ */
 class BounceFileLoader extends FileLoader
 {
 
@@ -30,6 +31,13 @@ class BounceFileLoader extends FileLoader
      */
     private $proxyGeneratorFactory;
 
+    /**
+     * BounceFileLoader constructor.
+     * @param ContainerBuilder $container Container to load the config into.
+     * @param FileLocatorInterface $locator Locator that'll be used to lookup files.
+     * @param ProxyGeneratorFactory $proxyGeneratorFactory A proxy generator for lookup methods
+     * @param string[] $customNamespaces Map of custom namespace names to ValueProviders for that namespace.
+     */
     public function __construct(ContainerBuilder $container, FileLocatorInterface $locator, ProxyGeneratorFactory $proxyGeneratorFactory, $customNamespaces = [])
     {
         parent::__construct($container, $locator);

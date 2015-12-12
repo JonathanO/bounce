@@ -10,9 +10,14 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
+/**
+ * Bean factory that converts bean definitions and references into Symfony DI config elements (rather than instances
+ * of the bean.)
+ *
+ * This is an internal implementation detail of the BounceFileLoader, and might be considered "a bit of a hack."
+ */
 class SymfonyConfigBeanFactory implements IBeanFactory
 {
-
 
     /**
      * @var LookupMethodProxyGenerator
@@ -49,13 +54,17 @@ class SymfonyConfigBeanFactory implements IBeanFactory
 
     protected function getConfigurator()
     {
+        // TODO: make this a ref to a common bean?
+        // The configurator will call configure() on the instantiated bean if it implements Configurable.
         return [new Definition('MooDev\Bounce\Symfony\SymfonyConfigurator'), 'configure'];
     }
 
     protected function getBeanFactory()
     {
+        // TODO: Make this a ref to a common bean?
+        // Return a bean factory that just obtains beans from the service container.
         $def = new Definition('MooDev\Bounce\Symfony\SymfonyContainerBeanFactory');
-        $def->addArgument(new Reference('service_container'));
+        $def->addArgument(new Reference('service_container')); // service_container is a magical service: the container itself.
         return $def;
     }
 
@@ -86,6 +95,7 @@ class SymfonyConfigBeanFactory implements IBeanFactory
             if (class_exists($class)) {
                 $rClass = new \ReflectionClass($class);
                 if (!$rClass->implementsInterface('MooDev\Bounce\Config\Configurable')) {
+                    // The class definitely doesn't need the configurator, so we can disable it.
                     $useConfigurator = false;
                 }
             }
@@ -93,6 +103,7 @@ class SymfonyConfigBeanFactory implements IBeanFactory
 
         $usesLookupMethods = false;
         if ($bean->lookupMethods) {
+            // If we have lookup methods then the class is actually a generated proxy.
             $class = ltrim($this->proxyGeneratorFactory->loadProxy($bean), '\\');
             $usesLookupMethods = true;
         }
@@ -100,6 +111,7 @@ class SymfonyConfigBeanFactory implements IBeanFactory
         $def = new Definition($class);
 
         if ($usesLookupMethods) {
+            // The proxy will take an additional, first, constructor arg which is expected to be a bean factory.
             $def->addArgument($this->getBeanFactory());
         }
 
@@ -110,6 +122,8 @@ class SymfonyConfigBeanFactory implements IBeanFactory
         }
 
         if ($bean->scope) {
+            // This is getting killed off in Symfony 3. Sigh.
+            // TODO: deal with Symfony 3.
             switch ($bean->scope) {
                 case "singleton":
                     $def->setScope(ContainerBuilder::SCOPE_CONTAINER);
@@ -127,6 +141,7 @@ class SymfonyConfigBeanFactory implements IBeanFactory
         }
 
         foreach ($bean->properties as $name => $property) {
+            // TODO: Could support setter injection using Reflection here?
             $def->setProperty($name, $this->convertValueProviderToValue($property));
         }
 

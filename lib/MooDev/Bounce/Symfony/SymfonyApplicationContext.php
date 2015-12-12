@@ -1,11 +1,9 @@
 <?php
 /**
- * Created by IntelliJ IDEA.
- * User: jono
- * Date: 11/12/2015
- * Time: 21:17
+ * @author Jonathan Oddy <jonathan@moo.com>
+ * @copyright Copyright (c) 2015, MOO Print Ltd.
+ * @license ISC
  */
-
 namespace MooDev\Bounce\Symfony;
 
 use MooDev\Bounce\Context\ApplicationContext;
@@ -18,6 +16,9 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 
+/**
+ * ApplicationContext that uses Symfony's DI framework and Bounce's config loader.
+ */
 class SymfonyApplicationContext extends ApplicationContext
 {
 
@@ -49,10 +50,18 @@ class SymfonyApplicationContext extends ApplicationContext
 
     /**
      * SymfonyApplicationContext constructor.
-     * @param string $contextFile
-     * @param string[] $customNamespaces
-     * @param string $cacheDir
-     * @param bool $isDebug
+     * Note, Bounce's import code currently will NOT use Symfony's config loaders, it will use a bounce internal file
+     * loader. Non bounce configs cannot be imported from a bounce context.
+     * However, by passing a different LoaderFactory to this constructor you can load something that isn't a bounce
+     * context into a new container wrapped to look like bounce.... potentially that config could include a bounce
+     * context itself... Though your Loader will need to deal with both Symfony's XMLFileLoader and the BounceFileLoader
+     * claiming the .xml file extension!
+     *
+     * @param string $contextFile Bounce context to load
+     * @param string[] $customNamespaces Map of namespace names to ValueProvider of any custom namespaces.
+     * @param string $cacheDir Directory that cached proxies and the compiled context should be loaded into.
+     * @param bool $isDebug If true, check that the compiled context cache isn't stale every request.
+     * @param LoaderFactory $loaderFactory Alternative Symfony config loader to use to load $contextFile.
      */
     public function __construct($contextFile, array $customNamespaces = [], $cacheDir = null, $isDebug = false, LoaderFactory $loaderFactory = null)
     {

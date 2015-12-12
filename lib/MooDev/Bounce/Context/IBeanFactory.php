@@ -27,6 +27,7 @@ interface IBeanFactory
     public function getAllBeanClasses();
 
     /**
+     * Create a bean based on a bean definition.
      * @param Bean $_bean
      * @return mixed
      */
