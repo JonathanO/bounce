@@ -121,11 +121,7 @@ class LookupMethodProxyGenerator {
                 $superCallBuilder->addParam('$' . $param->getName());
                 $default = "null";
                 if ($param->isDefaultValueAvailable()) {
-                    if ($param->isDefaultValueConstant()) {
-                        $default = $param->getDefaultValueConstantName();
-                    } else {
-                        $default = var_export($param->getDefaultValue(), true);
-                    }
+                    $default = var_export($param->getDefaultValue(), true);
                 }
                 $constructorBuilder->addParam(
                     new Param(
