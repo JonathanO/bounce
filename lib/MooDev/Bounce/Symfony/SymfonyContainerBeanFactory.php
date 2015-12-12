@@ -1,11 +1,9 @@
 <?php
 /**
- * Created by IntelliJ IDEA.
- * User: jono
- * Date: 11/12/2015
- * Time: 21:20
+ * @author Jonathan Oddy <jonathan@moo.com>
+ * @copyright Copyright (c) 2015, MOO Print Ltd.
+ * @license ISC
  */
-
 namespace MooDev\Bounce\Symfony;
 
 
@@ -14,6 +12,9 @@ use MooDev\Bounce\Context\IBeanFactory;
 use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * A BeanFactory that retrieves services from a Symfony container.
+ */
 class SymfonyContainerBeanFactory implements IBeanFactory
 {
 
