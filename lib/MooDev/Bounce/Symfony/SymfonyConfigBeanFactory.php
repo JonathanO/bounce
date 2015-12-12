@@ -5,6 +5,7 @@ namespace MooDev\Bounce\Symfony;
 use MooDev\Bounce\Config\Bean;
 use MooDev\Bounce\Config\ValueProvider;
 use MooDev\Bounce\Context\IBeanFactory;
+use MooDev\Bounce\Exception\BounceException;
 use MooDev\Bounce\Proxy\LookupMethodProxyGenerator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -28,7 +29,7 @@ class SymfonyConfigBeanFactory implements IBeanFactory
      * SymfonyConfigBeanFactory constructor.
      * @param LookupMethodProxyGenerator $proxyGeneratorFactory
      */
-    public function __construct(LookupMethodProxyGenerator $proxyGeneratorFactory)
+    public function __construct(LookupMethodProxyGenerator $proxyGeneratorFactory = null)
     {
         $this->proxyGeneratorFactory = $proxyGeneratorFactory;
     }
@@ -103,6 +104,9 @@ class SymfonyConfigBeanFactory implements IBeanFactory
 
         $usesLookupMethods = false;
         if ($bean->lookupMethods) {
+            if (!$this->proxyGeneratorFactory) {
+                throw new BounceException("Proxy generator not configured, cannot use lookup-method");
+            }
             // If we have lookup methods then the class is actually a generated proxy.
             $class = ltrim($this->proxyGeneratorFactory->loadProxy($bean), '\\');
             $usesLookupMethods = true;
