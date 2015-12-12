@@ -59,7 +59,8 @@ class SymfonyApplicationContext extends ApplicationContext
      *
      * @param string $contextFile Bounce context to load
      * @param string[] $customNamespaces Map of namespace names to ValueProvider of any custom namespaces.
-     * @param string $cacheDir Directory that cached proxies and the compiled context should be loaded into.
+     * @param string $cacheDir Directory that cached proxies and the compiled context should be loaded into. If this is
+     * null, you will have no caching. Compilation will be required every single time this is constructed, and be slow.
      * @param bool $isDebug If true, check that the compiled context cache isn't stale every request.
      * @param LoaderFactory $loaderFactory Alternative Symfony config loader to use to load $contextFile.
      */
