@@ -20,19 +20,12 @@ class SymfonyConfigBeanFactory implements IBeanFactory
     private $proxyGeneratorFactory;
 
     /**
-     * @var IBeanFactory
-     */
-    private $beanFactory;
-
-    /**
      * SymfonyConfigBeanFactory constructor.
      * @param LookupMethodProxyGenerator $proxyGeneratorFactory
-     * @param IBeanFactory $beanFactory
      */
-    public function __construct(LookupMethodProxyGenerator $proxyGeneratorFactory, IBeanFactory $beanFactory)
+    public function __construct(LookupMethodProxyGenerator $proxyGeneratorFactory)
     {
         $this->proxyGeneratorFactory = $proxyGeneratorFactory;
-        $this->beanFactory = $beanFactory;
     }
 
 
@@ -57,6 +50,13 @@ class SymfonyConfigBeanFactory implements IBeanFactory
     protected function getConfigurator()
     {
         return [new Definition('MooDev\Bounce\Symfony\SymfonyConfigurator'), 'configure'];
+    }
+
+    protected function getBeanFactory()
+    {
+        $def = new Definition('MooDev\Bounce\Symfony\SymfonyContainerBeanFactory');
+        $def->addArgument(new Reference('service_container'));
+        return $def;
     }
 
     protected function convertValueProviderToValue($valueProvider) {
@@ -93,14 +93,14 @@ class SymfonyConfigBeanFactory implements IBeanFactory
 
         $usesLookupMethods = false;
         if ($bean->lookupMethods) {
-            $class = $this->proxyGeneratorFactory->loadProxy($bean);
+            $class = ltrim($this->proxyGeneratorFactory->loadProxy($bean), '\\');
             $usesLookupMethods = true;
         }
 
         $def = new Definition($class);
 
         if ($usesLookupMethods) {
-            $def->addArgument($this->beanFactory);
+            $def->addArgument($this->getBeanFactory());
         }
 
         if ($useConfigurator) {
