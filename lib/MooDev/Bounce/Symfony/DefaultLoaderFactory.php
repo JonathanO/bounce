@@ -9,6 +9,7 @@
 namespace MooDev\Bounce\Symfony;
 
 
+use MooDev\Bounce\Proxy\ProxyGeneratorFactory;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -18,12 +19,16 @@ class DefaultLoaderFactory implements LoaderFactory
 
     private $customNamespaces;
 
+    private $proxyGeneratorFactory;
+
     /**
      * DefaultLoaderFactory constructor.
      * @param string[] $customNamespaces
+     * @param ProxyGeneratorFactory $proxyGeneratorFactory
      */
-    public function __construct(array $customNamespaces = [])
+    public function __construct(array $customNamespaces = [], ProxyGeneratorFactory $proxyGeneratorFactory)
     {
+        $this->proxyGeneratorFactory = $proxyGeneratorFactory;
         $this->customNamespaces = $customNamespaces;
     }
 
@@ -35,6 +40,6 @@ class DefaultLoaderFactory implements LoaderFactory
     public function getLoader(ContainerInterface $container)
     {
         $fileLocator = new FileLocator();
-        return new BounceFileLoader($container, $fileLocator, $this->customNamespaces);
+        return new BounceFileLoader($container, $fileLocator, $this->proxyGeneratorFactory, $this->customNamespaces);
     }
 }

@@ -10,8 +10,8 @@ namespace MooDev\Bounce\Symfony;
 
 
 use MooDev\Bounce\Config\Context;
-use MooDev\Bounce\Context\BeanFactory;
 use MooDev\Bounce\Context\XmlContextParser;
+use MooDev\Bounce\Proxy\ProxyGeneratorFactory;
 use Symfony\Component\Config\FileLocatorInterface;
 use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -26,15 +26,21 @@ class BounceFileLoader extends FileLoader
     private $customNamespaces;
 
     /**
-     * @var BeanFactory
+     * @var ProxyGeneratorFactory
      */
-    private $configBeanFactory;
+    private $proxyGeneratorFactory;
 
-    public function __construct(ContainerBuilder $container, FileLocatorInterface $locator, $customNamespaces = [])
+    /**
+     * @var SymfonyContainerBeanFactory
+     */
+    private $containerBeanFactory;
+
+    public function __construct(ContainerBuilder $container, FileLocatorInterface $locator, ProxyGeneratorFactory $proxyGeneratorFactory, $customNamespaces = [])
     {
-        $this->configBeanFactory = new SymfonyConfigBeanFactory();
-        $this->customNamespaces = $customNamespaces;
         parent::__construct($container, $locator);
+        $this->proxyGeneratorFactory = $proxyGeneratorFactory;
+        $this->customNamespaces = $customNamespaces;
+        $this->containerBeanFactory = new SymfonyContainerBeanFactory($container);
     }
 
     /**
@@ -71,6 +77,7 @@ class BounceFileLoader extends FileLoader
     }
 
     protected function importContext(Context $context) {
+        $configBeanFactory = new SymfonyConfigBeanFactory($this->proxyGeneratorFactory->getLookupMethodProxyGenerator($context->uniqueId), $this->containerBeanFactory);
         foreach ($context->childContexts as $childContext) {
             $this->importContext($childContext);
         }
@@ -79,7 +86,7 @@ class BounceFileLoader extends FileLoader
                 // TODO: wat.
                 continue;
             }
-            $this->container->setDefinition($bean->name, $this->configBeanFactory->create($bean));
+            $this->container->setDefinition($bean->name, $configBeanFactory->create($bean));
         }
         $this->container->addResource(new FileResource($context->fileName));
     }

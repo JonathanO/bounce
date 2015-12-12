@@ -5,12 +5,36 @@ namespace MooDev\Bounce\Symfony;
 use MooDev\Bounce\Config\Bean;
 use MooDev\Bounce\Config\ValueProvider;
 use MooDev\Bounce\Context\IBeanFactory;
+use MooDev\Bounce\Proxy\LookupMethodProxyGenerator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
 class SymfonyConfigBeanFactory implements IBeanFactory
 {
+
+
+    /**
+     * @var LookupMethodProxyGenerator
+     */
+    private $proxyGeneratorFactory;
+
+    /**
+     * @var IBeanFactory
+     */
+    private $beanFactory;
+
+    /**
+     * SymfonyConfigBeanFactory constructor.
+     * @param LookupMethodProxyGenerator $proxyGeneratorFactory
+     * @param IBeanFactory $beanFactory
+     */
+    public function __construct(LookupMethodProxyGenerator $proxyGeneratorFactory, IBeanFactory $beanFactory)
+    {
+        $this->proxyGeneratorFactory = $proxyGeneratorFactory;
+        $this->beanFactory = $beanFactory;
+    }
+
 
     /**
      * Create/retrieve an instance of a named bean.
@@ -30,6 +54,11 @@ class SymfonyConfigBeanFactory implements IBeanFactory
         throw new \RuntimeException("Not implemented");
     }
 
+    protected function getConfigurator()
+    {
+        return [new Definition('MooDev\Bounce\Symfony\SymfonyConfigurator'), 'configure'];
+    }
+
     protected function convertValueProviderToValue($valueProvider) {
         if ($valueProvider instanceof SymfonyAwareValueProvider) {
             return $valueProvider->getSymfonyValue();
@@ -47,14 +76,38 @@ class SymfonyConfigBeanFactory implements IBeanFactory
      */
     public function create(Bean $bean)
     {
+        $useConfigurator = true;
         if ($bean->factoryMethod) {
             // We don't have a clue what what the real class is, fake it and hope nothing breaks;
             $class = "stdClass";
         } else {
             $class = ltrim($bean->class, '\\');
+
+            if (class_exists($class)) {
+                $rClass = new \ReflectionClass($class);
+                if (!$rClass->implementsInterface('MooDev\Bounce\Config\Configurable')) {
+                    $useConfigurator = false;
+                }
+            }
+        }
+
+        $usesLookupMethods = false;
+        if ($bean->lookupMethods) {
+            $class = $this->proxyGeneratorFactory->loadProxy($bean);
+            $usesLookupMethods = true;
         }
 
         $def = new Definition($class);
+
+        if ($usesLookupMethods) {
+            $def->addArgument($this->beanFactory);
+        }
+
+        if ($useConfigurator) {
+            // We use the configurator if we know the class of the bean and it implements Configurable
+            // or if we have no idea what the class of the bean is (there's a factory method.)
+            $def->setConfigurator($this->getConfigurator());
+        }
 
         if ($bean->scope) {
             switch ($bean->scope) {
