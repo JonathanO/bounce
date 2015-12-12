@@ -26,9 +26,9 @@ class DefaultLoaderFactory implements LoaderFactory
     /**
      * DefaultLoaderFactory constructor.
      * @param string[] $customNamespaces
-     * @param ProxyGeneratorFactory $proxyGeneratorFactory
+     * @param ProxyGeneratorFactory $proxyGeneratorFactory A proxy generator factory, or null to disable lookup methods.
      */
-    public function __construct(array $customNamespaces = [], ProxyGeneratorFactory $proxyGeneratorFactory)
+    public function __construct(array $customNamespaces = [], ProxyGeneratorFactory $proxyGeneratorFactory = null)
     {
         $this->proxyGeneratorFactory = $proxyGeneratorFactory;
         $this->customNamespaces = $customNamespaces;

@@ -38,7 +38,7 @@ class BounceFileLoader extends FileLoader
      * @param ProxyGeneratorFactory $proxyGeneratorFactory A proxy generator for lookup methods
      * @param string[] $customNamespaces Map of custom namespace names to ValueProviders for that namespace.
      */
-    public function __construct(ContainerBuilder $container, FileLocatorInterface $locator, ProxyGeneratorFactory $proxyGeneratorFactory, $customNamespaces = [])
+    public function __construct(ContainerBuilder $container, FileLocatorInterface $locator, ProxyGeneratorFactory $proxyGeneratorFactory = null, $customNamespaces = [])
     {
         parent::__construct($container, $locator);
         $this->proxyGeneratorFactory = $proxyGeneratorFactory;
@@ -79,7 +79,11 @@ class BounceFileLoader extends FileLoader
     }
 
     protected function importContext(Context $context) {
-        $configBeanFactory = new SymfonyConfigBeanFactory($this->proxyGeneratorFactory->getLookupMethodProxyGenerator($context->uniqueId));
+        $lookupProxyGenerator = null;
+        if ($this->proxyGeneratorFactory) {
+            $lookupProxyGenerator = $this->proxyGeneratorFactory->getLookupMethodProxyGenerator($context->uniqueId);
+        }
+        $configBeanFactory = new SymfonyConfigBeanFactory($lookupProxyGenerator);
         foreach ($context->childContexts as $childContext) {
             $this->importContext($childContext);
         }
