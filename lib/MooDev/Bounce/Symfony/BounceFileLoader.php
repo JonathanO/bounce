@@ -30,17 +30,11 @@ class BounceFileLoader extends FileLoader
      */
     private $proxyGeneratorFactory;
 
-    /**
-     * @var SymfonyContainerBeanFactory
-     */
-    private $containerBeanFactory;
-
     public function __construct(ContainerBuilder $container, FileLocatorInterface $locator, ProxyGeneratorFactory $proxyGeneratorFactory, $customNamespaces = [])
     {
         parent::__construct($container, $locator);
         $this->proxyGeneratorFactory = $proxyGeneratorFactory;
         $this->customNamespaces = $customNamespaces;
-        $this->containerBeanFactory = new SymfonyContainerBeanFactory($container);
     }
 
     /**
@@ -77,7 +71,7 @@ class BounceFileLoader extends FileLoader
     }
 
     protected function importContext(Context $context) {
-        $configBeanFactory = new SymfonyConfigBeanFactory($this->proxyGeneratorFactory->getLookupMethodProxyGenerator($context->uniqueId), $this->containerBeanFactory);
+        $configBeanFactory = new SymfonyConfigBeanFactory($this->proxyGeneratorFactory->getLookupMethodProxyGenerator($context->uniqueId));
         foreach ($context->childContexts as $childContext) {
             $this->importContext($childContext);
         }

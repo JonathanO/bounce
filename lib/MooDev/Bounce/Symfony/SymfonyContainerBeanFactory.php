@@ -11,6 +11,7 @@ namespace MooDev\Bounce\Symfony;
 
 use MooDev\Bounce\Config\Bean;
 use MooDev\Bounce\Context\IBeanFactory;
+use Symfony\Component\DependencyInjection\ContainerAwareInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class SymfonyContainerBeanFactory implements IBeanFactory
@@ -48,4 +49,5 @@ class SymfonyContainerBeanFactory implements IBeanFactory
     {
         throw new \RuntimeException("Not implemented.");
     }
+
 }
