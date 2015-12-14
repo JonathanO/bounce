@@ -13,7 +13,9 @@ use MooDev\Bounce\Proxy\ProxyGeneratorFactory;
 use Symfony\Component\Config\FileLocatorInterface;
 use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\FileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * A Symfony Config FileLoader that will load a Bounce xml config into a Symfony DI container.
@@ -78,12 +80,24 @@ class BounceFileLoader extends FileLoader
         return is_string($resource) && 'xml' === pathinfo($resource, PATHINFO_EXTENSION);
     }
 
+    private function registerConfigurator()
+    {
+        $name = "bounceConfigurableConfigurator";
+        if (!$this->container->has($name)) {
+            $this->container->setDefinition($name, new Definition('MooDev\Bounce\Symfony\SymfonyConfigurator'));
+        }
+        return [new Reference($name), 'configure'];
+    }
+
     protected function importContext(Context $context) {
         $lookupProxyGenerator = null;
         if ($this->proxyGeneratorFactory) {
             $lookupProxyGenerator = $this->proxyGeneratorFactory->getLookupMethodProxyGenerator($context->uniqueId);
         }
-        $configBeanFactory = new SymfonyConfigBeanFactory($lookupProxyGenerator);
+
+        $configurator = $this->registerConfigurator();
+
+        $configBeanFactory = new SymfonyConfigBeanFactory($configurator, $lookupProxyGenerator);
         foreach ($context->childContexts as $childContext) {
             $this->importContext($childContext);
         }

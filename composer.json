@@ -7,8 +7,8 @@
     "license": "ISC",
     "require": {
         "php": ">=5.4.0",
-        "symfony/dependency-injection": "~2.7.0",
-        "symfony/config": "~2.7.0"
+        "symfony/dependency-injection": ">=2.3.0 <2.8.0",
+        "symfony/config": ">=2.3.0 <2.8.0"
     },
     "require-dev": {
         "mockery/mockery": "~0.9.0",
