@@ -26,12 +26,19 @@ class SymfonyConfigBeanFactory implements IBeanFactory
     private $proxyGeneratorFactory;
 
     /**
+     * @var array
+     */
+    private $configurator;
+
+    /**
      * SymfonyConfigBeanFactory constructor.
+     * @param array $configurator
      * @param LookupMethodProxyGenerator $proxyGeneratorFactory
      */
-    public function __construct(LookupMethodProxyGenerator $proxyGeneratorFactory = null)
+    public function __construct(array $configurator = null, LookupMethodProxyGenerator $proxyGeneratorFactory = null)
     {
         $this->proxyGeneratorFactory = $proxyGeneratorFactory;
+        $this->configurator = $configurator;
     }
 
 
@@ -55,9 +62,8 @@ class SymfonyConfigBeanFactory implements IBeanFactory
 
     protected function getConfigurator()
     {
-        // TODO: make this a ref to a common bean?
         // The configurator will call configure() on the instantiated bean if it implements Configurable.
-        return [new Definition('MooDev\Bounce\Symfony\SymfonyConfigurator'), 'configure'];
+        return $this->configurator;
     }
 
     protected function getBeanFactory()
@@ -150,9 +156,11 @@ class SymfonyConfigBeanFactory implements IBeanFactory
         }
 
         if ($bean->factoryBean) {
-            $def->setFactory([new Reference($bean->factoryBean), $bean->factoryMethod]);
+            $def->setFactoryService($bean->factoryBean);
+            $def->setFactoryMethod($bean->factoryMethod);
         } elseif ($bean->factoryMethod) {
-            $def->setFactory([$class, $bean->factoryMethod]);
+            $def->setFactoryClass($class);
+            $def->setFactoryMethod($bean->factoryMethod);
         }
 
         return $def;
