@@ -93,12 +93,11 @@ class SymfonyConfigBeanFactory implements IBeanFactory
     public function create(Bean $bean)
     {
         $useConfigurator = true;
+        $originalClass = $class = ltrim($bean->class, '\\');
         if ($bean->factoryMethod) {
             // We don't have a clue what what the real class is, fake it and hope nothing breaks;
             $class = "stdClass";
         } else {
-            $class = ltrim($bean->class, '\\');
-
             if (class_exists($class)) {
                 $rClass = new \ReflectionClass($class);
                 if (!$rClass->implementsInterface('MooDev\Bounce\Config\Configurable')) {
@@ -159,7 +158,7 @@ class SymfonyConfigBeanFactory implements IBeanFactory
             $def->setFactoryService($bean->factoryBean);
             $def->setFactoryMethod($bean->factoryMethod);
         } elseif ($bean->factoryMethod) {
-            $def->setFactoryClass($class);
+            $def->setFactoryClass($originalClass);
             $def->setFactoryMethod($bean->factoryMethod);
         }
 
